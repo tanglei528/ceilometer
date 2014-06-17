@@ -261,3 +261,60 @@ class WriteRequestsRatePollster(_DiskRatesPollsterBase):
             unit='requests/s',
             volume=disk_rates_info.write_requests_rate,
         )
+
+class DiskRootUsagePollster(plugin.ComputePollster):
+    def get_samples(self, manager, cache, resources):
+        self._inspection_duration = self._record_poll_time()
+        mark_name = 'disk.root.size.used'
+        for instance in resources:
+            LOG.debug(_('Checking disk usage for instance %s'), instance.id)
+            try:
+                disk_info = manager.inspector.inspect_disk_usage(
+                    instance, mark_name, self._inspection_duration)
+                yield util.make_sample_from_instance(
+                        instance,
+                        name=mark_name,
+                        type=sample.TYPE_GAUGE,
+                        unit='GB',
+                        volume=disk_info.usage,
+                )
+            except virt_inspector.InstanceNotFoundException as err:
+                # Instance was deleted while getting samples. Ignore it.
+                LOG.debug(_('Exception while getting samples %s'), err)
+            except NotImplementedError:
+                # Selected inspector does not implement this pollster.
+                LOG.debug(_('Obtaining Disk Usage is not implemented for %s'
+                            ), manager.inspector.__class__.__name__)
+            except Exception as err:
+                LOG.exception(_('Could not get Disk Usage for '
+                                '%(id)s: %(e)s'), {'id': instance.id,
+                                                   'e': err})
+
+
+class DiskEphemeralUsagePollster(plugin.ComputePollster):
+    def get_samples(self, manager, cache, resources):
+        self._inspection_duration = self._record_poll_time()
+        mark_name = 'disk.ephemeral.size.used'
+        for instance in resources:
+            LOG.debug(_('Checking disk usage for instance %s'), instance.id)
+            try:
+                disk_info = manager.inspector.inspect_disk_usage(
+                    instance, mark_name ,self._inspection_duration,)
+                yield util.make_sample_from_instance(
+                        instance,
+                        name=mark_name,
+                        type=sample.TYPE_GAUGE,
+                        unit='GB',
+                        volume=disk_info.usage,
+                )
+            except virt_inspector.InstanceNotFoundException as err:
+                # Instance was deleted while getting samples. Ignore it.
+                LOG.debug(_('Exception while getting samples %s'), err)
+            except NotImplementedError:
+                # Selected inspector does not implement this pollster.
+                LOG.debug(_('Obtaining Disk Usage is not implemented for %s'
+                            ), manager.inspector.__class__.__name__)
+            except Exception as err:
+                LOG.exception(_('Could not get Disk Usage for '
+                                '%(id)s: %(e)s'), {'id': instance.id,
+                                                   'e': err})                

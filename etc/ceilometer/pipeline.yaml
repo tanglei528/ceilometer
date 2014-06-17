@@ -12,6 +12,12 @@ sources:
           - "cpu"
       sinks:
           - cpu_sink
+    - name: memory_source
+      interval: 600
+      meters:
+          - "memory.usage"
+      sinks:
+          - memory_sink
     - name: disk_source
       interval: 600
       meters:
@@ -21,6 +27,18 @@ sources:
           - "disk.write.requests"
       sinks:
           - disk_sink
+    - name: disk_root_used_source
+      interval: 600
+      meters:
+          - "disk.root.size.used"
+      sinks:
+          - disk_root_used_sink
+    - name: disk_ephemeral_used_source
+      interval: 600
+      meters:
+          - "disk.ephemeral.size.used"
+      sinks:
+          - disk_ephemeral_used_sink    
     - name: network_source
       interval: 600
       meters:
@@ -46,6 +64,17 @@ sinks:
                     scale: "100.0 / (10**9 * (resource_metadata.cpu_number or 1))"
       publishers:
           - rpc://
+    - name: memory_sink
+      transformers:
+          - name: "unit_conversion"
+            parameters:
+                target:
+                    name: "memory.usage.rate"
+                    unit: "%"
+                    type: "gauge"
+                    scale: "volume * 100.0 / resource_metadata.memory_mb"
+      publishers:
+          - rpc://
     - name: disk_sink
       transformers:
           - name: "rate_of_change"
@@ -61,6 +90,28 @@ sinks:
                     type: "gauge"
       publishers:
           - rpc://
+    - name: disk_root_used_sink
+      transformers:
+          - name: "unit_conversion"
+            parameters:
+                target:
+                    name: "disk.root.size.used.percent"
+                    unit: "%"
+                    type: "gauge"
+                    scale: "volume * 100.0 / resource_metadata.disk_gb"
+      publishers:
+          - rpc://
+    - name: disk_ephemeral_used_sink
+      transformers:
+          - name: "unit_conversion"
+            parameters:
+                target:
+                    name: "disk.ephemeral.size.used.percent"
+                    unit: "%"
+                    type: "gauge"
+                    scale: "volume * 100.0 / resource_metadata.ephemeral_gb"
+      publishers:
+          - rpc://          
     - name: network_sink
       transformers:
           - name: "rate_of_change"

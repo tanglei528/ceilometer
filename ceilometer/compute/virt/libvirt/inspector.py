@@ -24,6 +24,8 @@ from ceilometer.compute.virt import inspector as virt_inspector
 from ceilometer.openstack.common.gettextutils import _  # noqa
 from ceilometer.openstack.common import log as logging
 
+from ceilometer.openstack.common import units
+
 libvirt = None
 
 LOG = logging.getLogger(__name__)
@@ -109,6 +111,50 @@ class LibvirtInspector(virt_inspector.Inspector):
         domain = self._lookup_by_name(instance_name)
         (__, __, __, num_cpu, cpu_time) = domain.info()
         return virt_inspector.CPUStats(number=num_cpu, time=cpu_time)
+
+    ##custom
+    def inspect_memory_usage(self, instance_name, duration=None):
+        ins_name = getattr(instance_name, 'OS-EXT-SRV-ATTR:instance_name', None)
+        domain = self._lookup_by_name(ins_name)
+        mem_use = domain.memoryStats()['rss'] / units.Ki
+        return virt_inspector.MemoryUsageStats(usage=mem_use)
+              
+    ##custom
+    def inspect_disk_usage(self, instance_name, mark_name, duration=None):
+        ins_name = getattr(instance_name, 'OS-EXT-SRV-ATTR:instance_name', None)
+        domain = self._lookup_by_name(ins_name)
+        (state, __, __, __, __) = domain.info()
+        if state == libvirt.VIR_DOMAIN_SHUTOFF:
+            LOG.warn(_('Failed to inspect disks of %(instance_name)s, '
+                       'domain is in state of SHUTOFF'),
+                     {'instance_name': instance_name})
+            return
+        tree = etree.fromstring(domain.XMLDesc(0))
+        for disk in tree.findall('devices/disk'):
+            device = disk.find('target').get('dev')
+            disk_key = None
+            if disk.get('type') == 'file':
+                disk_key = virt_inspector.Disk(device=device)
+                file_path = disk.find('source').get('file')
+                path_mark = file_path.split('.')
+                if mark_name == 'disk.ephemeral.size.used':
+                    if len(path_mark) > 1:
+                        block_info = domain.blockInfo(file_path, 0)
+                        size = float('%.3f' % (block_info[1]*1.0 / units.Gi))
+                        return virt_inspector.DiskUsageStats(usage=size)
+                else:
+                    if len(path_mark) == 1:
+                        block_info = domain.blockInfo(file_path, 0)
+                        size = float('%.3f' % (block_info[1]*1.0 / units.Gi))
+                        return virt_inspector.DiskUsageStats(usage=size)
+            else:
+                ##Unused
+                disk_serial = disk.find('serial').text
+                disk_key = virt_inspector.Disk(device=device + '_' + disk_serial)
+                file_path = disk.find('source').get('dev')
+                volume_info = domain.blockInfo(file_path, 0)
+                size = float('%.3f' % (volume_info[1]*1.0 / units.Gi))
+                return virt_inspector.DiskUsageStats(usage=size)
 
     def inspect_vnics(self, instance_name):
         domain = self._lookup_by_name(instance_name)

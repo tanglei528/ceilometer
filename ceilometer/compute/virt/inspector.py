@@ -131,6 +131,8 @@ DiskRateStats = collections.namedtuple('DiskRateStats',
                                         'write_bytes_rate',
                                         'write_requests_rate'])
 
+##custom
+DiskUsageStats = collections.namedtuple('DiskUsageStats', ['usage'])
 
 # Exception types
 #
@@ -217,6 +219,10 @@ class Inspector(object):
         :return: for each disk, the number of bytes & operations
                  read and written per second, with the error count
         """
+        raise NotImplementedError()
+
+    ##custom
+    def inspect_disk_usage(self, instance, mark_name, duration=None):
         raise NotImplementedError()
 
 
