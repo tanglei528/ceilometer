@@ -84,3 +84,87 @@ class OutgoingErrorsPollster(_Base):
                                           volume=info.error,
                                           res_metadata=nic,
                                           )
+
+
+class IncomingBytesRatePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (nic, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='network.incoming.bytes.rate',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='B/s',
+                                          volume=info.rx_bytes_rate,
+                                          res_metadata=nic,
+                                          )
+
+
+class OutgoingBytesRatePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (nic, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='network.outgoing.bytes.rate',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='B/s',
+                                          volume=info.tx_bytes_rate,
+                                          res_metadata=nic,
+                                          )
+
+                                          
+class IncomingPacketsPollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (nic, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='network.incoming.packets',
+                                          type=sample.TYPE_CUMULATIVE,
+                                          unit='packet',
+                                          volume=info.rx_packets,
+                                          res_metadata=nic,
+                                          )
+
+
+class OutgoingPacketsPollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (nic, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='network.outgoing.packets',
+                                          type=sample.TYPE_CUMULATIVE,
+                                          unit='packet',
+                                          volume=info.tx_packets,
+                                          res_metadata=nic,
+                                          )
+
+
+class IncomingPacketsRatePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (nic, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='network.incoming.packets.rate',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='packet/s',
+                                          volume=info.rx_packets_rate,
+                                          res_metadata=nic,
+                                          )
+
+
+class OutgoingPacketsRatePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (nic, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='network.incoming.packets.rate',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='packet/s',
+                                          volume=info.tx_packets_rate,
+                                          res_metadata=nic,
+                                          )

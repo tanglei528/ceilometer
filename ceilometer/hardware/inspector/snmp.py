@@ -23,6 +23,10 @@ import urlparse
 from ceilometer.hardware.inspector import base
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
+from ceilometer.openstack.common import log
+
+LOG = log.getLogger(__name__)
+
 
 class SNMPException(Exception):
     pass
@@ -56,15 +60,26 @@ class SNMPInspector(base.Inspector):
     _cpu_1_min_load_oid = "1.3.6.1.4.1.2021.10.1.3.1"
     _cpu_5_min_load_oid = "1.3.6.1.4.1.2021.10.1.3.2"
     _cpu_15_min_load_oid = "1.3.6.1.4.1.2021.10.1.3.3"
+
+    _cpu_user_time_oid = "1.3.6.1.4.1.2021.11.50.0"
+    _cpu_nice_time_oid = "1.3.6.1.4.1.2021.11.51.0"
+    _cpu_system_time_oid = "1.3.6.1.4.1.2021.11.52.0"
+    _cpu_idle_time_oid = "1.3.6.1.4.1.2021.11.53.0"
+    _cpu_wait_time_oid = "1.3.6.1.4.1.2021.11.54.0"
+    _cpu_kernel_time_oid = "1.3.6.1.4.1.2021.11.55.0"
+    _cpu_interrupt_time_oid = "1.3.6.1.4.1.2021.11.56.0"
+    	
     #Memory OIDs
     _memory_total_oid = "1.3.6.1.4.1.2021.4.5.0"
     _memory_used_oid = "1.3.6.1.4.1.2021.4.6.0"
+
     #Disk OIDs
     _disk_index_oid = "1.3.6.1.4.1.2021.9.1.1"
     _disk_path_oid = "1.3.6.1.4.1.2021.9.1.2"
     _disk_device_oid = "1.3.6.1.4.1.2021.9.1.3"
     _disk_size_oid = "1.3.6.1.4.1.2021.9.1.6"
     _disk_used_oid = "1.3.6.1.4.1.2021.9.1.8"
+
     #Network Interface OIDs
     _interface_index_oid = "1.3.6.1.2.1.2.2.1.1"
     _interface_name_oid = "1.3.6.1.2.1.2.2.1.2"
@@ -74,6 +89,10 @@ class SNMPInspector(base.Inspector):
     _interface_received_oid = "1.3.6.1.2.1.2.2.1.10"
     _interface_transmitted_oid = "1.3.6.1.2.1.2.2.1.16"
     _interface_error_oid = "1.3.6.1.2.1.2.2.1.20"
+    _interface_inpak_oid = "1.3.6.1.2.1.2.2.1.11"
+    _interface_outpak_oid = "1.3.6.1.2.1.2.2.1.17"
+
+
     #Default port and security name
     _port = 161
     _security_name = 'public'
@@ -89,10 +108,12 @@ class SNMPInspector(base.Inspector):
         else:
             func = self._cmdGen.nextCmd
             ret_func = lambda x: x
-        ret = func(cmdgen.CommunityData(self._get_security_name(host)),
+        LOG.info( "COM:" + self._get_security_name(host))
+        ret = func(cmdgen.CommunityData('server', self._get_security_name(host), 1),
                    cmdgen.UdpTransportTarget((host.hostname,
                                               host.port or self._port)),
                    oid)
+        LOG.debug("RET: %s", ret)
         (error, data) = parse_snmp_return(ret)
         if error:
             raise SNMPException("An error occurred, oid %(oid)s, "
@@ -118,17 +139,60 @@ class SNMPInspector(base.Inspector):
         cpu_15_min_load = \
             str(self._get_value_from_oid(self._cpu_15_min_load_oid, host))
 
+        #get cpu_time
+        cpu_user_time = \
+            str(self._get_value_from_oid(self._cpu_user_time_oid, host))
+        cpu_nice_time = \
+            str(self._get_value_from_oid(self._cpu_nice_time_oid, host))
+        cpu_system_time = \
+            str(self._get_value_from_oid(self._cpu_system_time_oid, host))
+        cpu_idle_time = \
+            str(self._get_value_from_oid(self._cpu_idle_time_oid, host))
+        cpu_wait_time = \
+            str(self._get_value_from_oid(self._cpu_wait_time_oid, host))
+        cpu_kernel_time = \
+            str(self._get_value_from_oid(self._cpu_kernel_time_oid, host))
+        cpu_interrupt_time = \
+            str(self._get_value_from_oid(self._cpu_interrupt_time_oid, host))
+
+        cpu_used = \
+        	(int(cpu_user_time) + int(cpu_nice_time) + int(cpu_system_time) 
+        	+ int(cpu_idle_time) + int(cpu_wait_time) 
+        	+ int(cpu_kernel_time) + int(cpu_interrupt_time))
+
+        cpu_usage = \
+        	float(cpu_idle_time) / float(int(cpu_user_time) +
+        			int(cpu_nice_time) + int(cpu_system_time) + 
+        			int(cpu_idle_time) + int(cpu_wait_time) + 
+        			int(cpu_kernel_time) + int(cpu_interrupt_time))
+
+        cpu_usage = float(cpu_usage)
+        cpu_usage = "%.2f" % cpu_usage
+        cpu_usage = float(cpu_usage)
+        cpu_usage = int(cpu_usage * 100)
+        LOG.debug("cpu_idle_time: %s", cpu_idle_time)
+        LOG.debug("cpu_used: %s", cpu_used)
+        LOG.debug("cpu_usage: %s", cpu_usage)
+        
         yield base.CPUStats(cpu_1_min=float(cpu_1_min_load),
                             cpu_5_min=float(cpu_5_min_load),
-                            cpu_15_min=float(cpu_15_min_load))
+                            cpu_15_min=float(cpu_15_min_load),
+                            cpu_used=float(cpu_used),
+                            cpu_usage=float(cpu_usage))
 
     def inspect_memory(self, host):
         #get total memory
         total = self._get_value_from_oid(self._memory_total_oid, host)
         #get used memory
         used = self._get_value_from_oid(self._memory_used_oid, host)
+        #usage memory
+        usage = float(used)/float(total)
+        usage = float(usage)
+        usage = "%.2f" % usage
+        usage = float(usage)
+        usage = int(usage * 100)
 
-        yield base.MemoryStats(total=int(total), used=int(used))
+        yield base.MemoryStats(total=int(total), used=int(used), usage=int(usage))
 
     def inspect_disk(self, host):
         disks = self._walk_oid(self._disk_index_oid, host)
@@ -146,8 +210,16 @@ class SNMPInspector(base.Inspector):
 
                 disk = base.Disk(device=str(device),
                                  path=str(path))
+
+                #usage disk
+                usage = float(used)/float(size)
+                usage = float(usage)
+                usage = "%.2f" % usage
+                usage = float(usage)
+                usage = int(usage * 100)
                 stats = base.DiskStats(size=int(size),
-                                       used=int(used))
+                                       used=int(used),
+                                       usage=int(usage))
 
                 yield (disk, stats)
 
@@ -177,14 +249,25 @@ class SNMPInspector(base.Inspector):
                                        str(value))
                 error = self._get_value_from_oid(error_oid, host)
 
+                inpak_oid = "%s.%s" % (self._interface_inpak_oid,
+                        str(value))
+                rx_packets = self._get_value_from_oid(inpak_oid, host)
+                
+                outpak_oid = "%s.%s" % (self._interface_outpak_oid,
+                        str(value))
+                tx_packets = self._get_value_from_oid(outpak_oid, host)
+                
                 adapted_mac = mac.prettyPrint().replace('0x', '')
+                
                 interface = base.Interface(name=str(name),
                                            mac=adapted_mac,
                                            ip=str(ip))
                 stats = base.InterfaceStats(bandwidth=int(bandwidth),
                                             rx_bytes=int(rx_bytes),
                                             tx_bytes=int(tx_bytes),
-                                            error=int(error))
+                                            error=int(error),
+                                            rx_packets=int(rx_packets),
+                                            tx_packets=int(tx_packets))
                 yield (interface, stats)
 
     def _get_security_name(self, host):

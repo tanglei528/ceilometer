@@ -64,3 +64,27 @@ class CPULoad15MinPollster(_Base):
                                           unit='process',
                                           volume=c_data.cpu_15_min,
                                           )
+
+
+class CPUUsedPollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        return util.make_sample_from_host(host,
+                                          name='cpu.used',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='process',
+                                          volume=c_data.cpu_used,
+                                          )
+
+
+class CPUUsagePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        return util.make_sample_from_host(host,
+                                          name='cpu.usage',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='%',
+                                          volume=c_data.cpu_usage,
+                                          )

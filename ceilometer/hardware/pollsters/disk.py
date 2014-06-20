@@ -38,7 +38,7 @@ class DiskTotalPollster(_Base):
         return util.make_sample_from_host(host,
                                           name='disk.size.total',
                                           type=sample.TYPE_GAUGE,
-                                          unit='B',
+                                          unit='KB',
                                           volume=info.size,
                                           res_metadata=disk,
                                           )
@@ -52,7 +52,21 @@ class DiskUsedPollster(_Base):
         return util.make_sample_from_host(host,
                                           name='disk.size.used',
                                           type=sample.TYPE_GAUGE,
-                                          unit='B',
+                                          unit='KB',
                                           volume=info.used,
+                                          res_metadata=disk,
+                                          )
+ 
+                                          
+class DiskUsagePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        (disk, info) = c_data
+        return util.make_sample_from_host(host,
+                                          name='disk.size.usage',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='%',
+                                          volume=info.usage,
                                           res_metadata=disk,
                                           )

@@ -31,14 +31,14 @@ import six
 #
 CPUStats = collections.namedtuple(
     'CPUStats',
-    ['cpu_1_min', 'cpu_5_min', 'cpu_15_min'])
+    ['cpu_1_min', 'cpu_5_min', 'cpu_15_min', 'cpu_used', 'cpu_usage'])
 
 # Named tuple representing RAM statistics.
 #
 # total: Total Memory (bytes)
 # used: Used Memory (bytes)
 #
-MemoryStats = collections.namedtuple('MemoryStats', ['total', 'used'])
+MemoryStats = collections.namedtuple('MemoryStats', ['total', 'used', 'usage'])
 
 # Named tuple representing disks.
 #
@@ -52,7 +52,7 @@ Disk = collections.namedtuple('Disk', ['device', 'path'])
 # size: storage size (bytes)
 # used: storage used (bytes)
 #
-DiskStats = collections.namedtuple('DiskStats', ['size', 'used'])
+DiskStats = collections.namedtuple('DiskStats', ['size', 'used', 'usage'])
 
 
 # Named tuple representing an interface.
@@ -73,7 +73,7 @@ Interface = collections.namedtuple('Interface', ['name', 'mac', 'ip'])
 #
 InterfaceStats = collections.namedtuple(
     'InterfaceStats',
-    ['bandwidth', 'rx_bytes', 'tx_bytes', 'error'])
+    ['bandwidth', 'rx_bytes', 'tx_bytes', 'error', 'rx_packets', 'tx_packets'])
 
 
 @six.add_metaclass(abc.ABCMeta)

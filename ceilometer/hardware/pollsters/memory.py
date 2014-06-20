@@ -37,7 +37,7 @@ class MemoryTotalPollster(_Base):
         return util.make_sample_from_host(host,
                                           name='memory.total',
                                           type=sample.TYPE_GAUGE,
-                                          unit='B',
+                                          unit='KB',
                                           volume=c_data.total,
                                           )
 
@@ -49,6 +49,19 @@ class MemoryUsedPollster(_Base):
         return util.make_sample_from_host(host,
                                           name='memory.used',
                                           type=sample.TYPE_GAUGE,
-                                          unit='B',
+                                          unit='KB',
                                           volume=c_data.used,
                                           )
+
+
+class MemoryUsagePollster(_Base):
+
+    @staticmethod
+    def generate_one_sample(host, c_data):
+        return util.make_sample_from_host(host,
+                                          name='memory.usage',
+                                          type=sample.TYPE_GAUGE,
+                                          unit='%',
+                                          volume=c_data.usage,
+                                          )
+
