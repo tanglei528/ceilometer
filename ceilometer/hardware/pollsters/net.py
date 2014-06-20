@@ -37,8 +37,8 @@ class BandwidthBytesPollster(_Base):
         (nic, info) = c_data
         return util.make_sample_from_host(host,
                                           name='network.bandwidth.bytes',
-                                          type=sample.TYPE_GAUGE,
-                                          unit='B/s',
+                                          type=sample.TYPE_CUMULATIVE,
+                                          unit='B',
                                           volume=info.bandwidth,
                                           res_metadata=nic,
                                           )
