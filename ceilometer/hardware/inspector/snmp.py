@@ -54,6 +54,11 @@ def parse_snmp_return(ret):
         data = varBinds
     return (err, data)
 
+NETWORK_RX_COUNTER = 'net:received:average'
+NETWORK_TX_COUNTER = 'net:transmitted:average'
+NETWORK_RX_PACKET_COUNTER = 'net:received:packet:average'
+NETWORK_TX_PACKET_COUNTER = 'net:transmitted:packet:average'
+
 
 class SNMPInspector(base.Inspector):
     #CPU OIDs
@@ -62,12 +67,7 @@ class SNMPInspector(base.Inspector):
     _cpu_15_min_load_oid = "1.3.6.1.4.1.2021.10.1.3.3"
 
     _cpu_user_time_oid = "1.3.6.1.4.1.2021.11.50.0"
-    _cpu_nice_time_oid = "1.3.6.1.4.1.2021.11.51.0"
-    _cpu_system_time_oid = "1.3.6.1.4.1.2021.11.52.0"
-    _cpu_idle_time_oid = "1.3.6.1.4.1.2021.11.53.0"
-    _cpu_wait_time_oid = "1.3.6.1.4.1.2021.11.54.0"
-    _cpu_kernel_time_oid = "1.3.6.1.4.1.2021.11.55.0"
-    _cpu_interrupt_time_oid = "1.3.6.1.4.1.2021.11.56.0"
+    _cpu_user_time_percent_oid = "1.3.6.1.4.1.2021.11.9.0"
     	
     #Memory OIDs
     _memory_total_oid = "1.3.6.1.4.1.2021.4.5.0"
@@ -139,40 +139,14 @@ class SNMPInspector(base.Inspector):
         cpu_15_min_load = \
             str(self._get_value_from_oid(self._cpu_15_min_load_oid, host))
 
-        #get cpu_time
-        cpu_user_time = \
-            str(self._get_value_from_oid(self._cpu_user_time_oid, host))
-        cpu_nice_time = \
-            str(self._get_value_from_oid(self._cpu_nice_time_oid, host))
-        cpu_system_time = \
-            str(self._get_value_from_oid(self._cpu_system_time_oid, host))
-        cpu_idle_time = \
-            str(self._get_value_from_oid(self._cpu_idle_time_oid, host))
-        cpu_wait_time = \
-            str(self._get_value_from_oid(self._cpu_wait_time_oid, host))
-        cpu_kernel_time = \
-            str(self._get_value_from_oid(self._cpu_kernel_time_oid, host))
-        cpu_interrupt_time = \
-            str(self._get_value_from_oid(self._cpu_interrupt_time_oid, host))
-
+        #get cpu_used 1/100s
         cpu_used = \
-        	(int(cpu_user_time) + int(cpu_nice_time) + int(cpu_system_time) 
-        	+ int(cpu_idle_time) + int(cpu_wait_time) 
-        	+ int(cpu_kernel_time) + int(cpu_interrupt_time))
+            str(self._get_value_from_oid(self._cpu_user_time_oid, host))
 
+        #get cpu_usage
         cpu_usage = \
-        	float(cpu_idle_time) / float(int(cpu_user_time) +
-        			int(cpu_nice_time) + int(cpu_system_time) + 
-        			int(cpu_idle_time) + int(cpu_wait_time) + 
-        			int(cpu_kernel_time) + int(cpu_interrupt_time))
+        	str(self._get_value_from_oid(self._cpu_user_time_percent_oid, host))
 
-        cpu_usage = float(cpu_usage)
-        cpu_usage = "%.2f" % cpu_usage
-        cpu_usage = float(cpu_usage)
-        cpu_usage = int(cpu_usage * 100)
-        LOG.debug("cpu_idle_time: %s", cpu_idle_time)
-        LOG.debug("cpu_used: %s", cpu_used)
-        LOG.debug("cpu_usage: %s", cpu_usage)
         
         yield base.CPUStats(cpu_1_min=float(cpu_1_min_load),
                             cpu_5_min=float(cpu_5_min_load),
@@ -256,7 +230,7 @@ class SNMPInspector(base.Inspector):
                 outpak_oid = "%s.%s" % (self._interface_outpak_oid,
                         str(value))
                 tx_packets = self._get_value_from_oid(outpak_oid, host)
-                
+
                 adapted_mac = mac.prettyPrint().replace('0x', '')
                 
                 interface = base.Interface(name=str(name),
@@ -268,6 +242,51 @@ class SNMPInspector(base.Inspector):
                                             error=int(error),
                                             rx_packets=int(rx_packets),
                                             tx_packets=int(tx_packets))
+                yield (interface, stats)
+
+    def inspect_pic_rates(self, host, duration=None):
+        nic_stats = {}
+    	nic_ids = set()
+
+    	for net_counter in (NETWORK_RX_COUNTER, NETWORK_TX_COUNTER,
+				NETWORK_RX_PACKET_COUNTER, NETWORK_TX_PACKET_COUNTER):
+			net_counter_id = self._ops.get_perf_counter_id(net_counter)
+			nic_id_to_stats_map = self._ops.query_vm_device_stats(
+					vm_moid, net_counter_id, duration)
+			nic_stats[net_counter] = nic_id_to_stats_map
+			nic_ids.update(nic_id_to_stats_map.iterkeys())
+		
+        net_interfaces = self._walk_oid(self._interface_index_oid, host)
+
+        for interface in net_interfaces:
+            for object_name, value in interface:
+                ip = self._get_ip_for_interface(host, value)
+                name_oid = "%s.%s" % (self._interface_name_oid,
+                                      str(value))
+                name = self._get_value_from_oid(name_oid, host)
+                mac_oid = "%s.%s" % (self._interface_mac_oid,
+                                     str(value))
+                mac = self._get_value_from_oid(mac_oid, host)
+                bw_oid = "%s.%s" % (self._interface_bandwidth_oid,
+                                    str(value))
+
+                adapted_mac = mac.prettyPrint().replace('0x', '')
+                rx_bytes_rate = (nic_stats[NETWORK_RX_COUNTER]
+                                            .get(nic_id, 0) * units.Ki)
+                tx_bytes_rate = (nic_stats[NETWORK_TX_COUNTER]
+                                            .get(nic_id, 0) * units.Ki)
+                rx_packets_rate = (nic_stats[NETWORK_RX_PACKET_COUNTER]
+                                            .get(nic_id, 0) * units.Ki)
+                tx_packets_rate = (nic_stats[NETWORK_TX_PACKET_COUNTER]
+                                            .get(nic_id, 0) * units.Ki)
+
+                stats = virt_inspector.InterfaceRateStats(rx_bytes_rate,
+                                                      tx_bytes_rate,
+                                                      rx_packets_rate,
+                                                      tx_packets_rate)
+                interface = base.Interface(name=str(name),
+                                           mac=adapted_mac,
+                                           ip=str(ip))
                 yield (interface, stats)
 
     def _get_security_name(self, host):
