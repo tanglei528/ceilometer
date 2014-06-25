@@ -76,18 +76,6 @@ InterfaceStats = collections.namedtuple(
     ['bandwidth', 'rx_bytes', 'tx_bytes', 'error', 'rx_packets', 'tx_packets'])
 
 
-# Named tuple representing nic rate statistics.
-#
-# rx_bytes_rate: rate of received bytes
-# tx_bytes_rate: rate of transmitted bytes
-# rx_packets_rate: rate of received packets
-# tx_packets_rate: rate of transmitted packets
-#
-InterfaceRateStats = collections.namedtuple(
-		'InterfaceRateStats',
-		['rx_bytes_rate', 'tx_bytes_rate', 'rx_packets_rate', 'tx_packets_rate'])
-
-
 @six.add_metaclass(abc.ABCMeta)
 class Inspector(object):
     @abc.abstractmethod
@@ -120,12 +108,4 @@ class Inspector(object):
 
         :param : the target host
         :return: iterator of tuple (Interface, InterfaceStats)
-        """
-
-    @abc.abstractmethod
-    def inspect_pic_rates(self, host, duration=None):
-        """Inspect the network rate for a host.
-
-        :param : the target host
-        :return: iterator of tuple (Interface, InterfaceRateStats)
         """

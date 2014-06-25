@@ -113,23 +113,17 @@ class OutgoingPacketsPollster(_Base):
                                           res_metadata=nic,
                                           )
 
-class _RateBase(_Base):
-
-    CACHE_KEY = 'pic'
-    INSPECT_METHOD = 'inspect_pic_rates'
-
-
 class IncomingBytesRatePollster(_Base):
 
     @staticmethod
     def generate_one_sample(host, c_data):
-        (pic, info) = c_data
+        (nic, info) = c_data
         return util.make_sample_from_host(host,
                                           name='network.incoming.bytes.rate',
                                           type=sample.TYPE_GAUGE,
                                           unit='B/s',
-                                          volume=info.rx_bytes_rate,
-                                          res_metadata=pic,
+                                          volume=info.rx_bytes,
+                                          res_metadata=nic,
                                           )
 
 
@@ -137,13 +131,13 @@ class OutgoingBytesRatePollster(_Base):
 
     @staticmethod
     def generate_one_sample(host, c_data):
-        (pic, info) = c_data
+        (nic, info) = c_data
         return util.make_sample_from_host(host,
                                           name='network.outgoing.bytes.rate',
                                           type=sample.TYPE_GAUGE,
                                           unit='B/s',
-                                          volume=info.tx_bytes_rate,
-                                          res_metadata=pic,
+                                          volume=info.tx_bytes,
+                                          res_metadata=nic,
                                           )
 
 
@@ -151,13 +145,13 @@ class IncomingPacketsRatePollster(_Base):
 
     @staticmethod
     def generate_one_sample(host, c_data):
-        (pic, info) = c_data
+        (nic, info) = c_data
         return util.make_sample_from_host(host,
                                           name='network.incoming.packets.rate',
                                           type=sample.TYPE_GAUGE,
                                           unit='packet/s',
-                                          volume=info.rx_packets_rate,
-                                          res_metadata=pic,
+                                          volume=info.rx_packets,
+                                          res_metadata=nic,
                                           )
 
 
@@ -165,11 +159,11 @@ class OutgoingPacketsRatePollster(_Base):
 
     @staticmethod
     def generate_one_sample(host, c_data):
-        (pic, info) = c_data
+        (nic, info) = c_data
         return util.make_sample_from_host(host,
-                                          name='network.incoming.packets.rate',
+                                          name='network.outgoing.packets.rate',
                                           type=sample.TYPE_GAUGE,
                                           unit='packet/s',
-                                          volume=info.tx_packets_rate,
-                                          res_metadata=pic,
+                                          volume=info.tx_packets,
+                                          res_metadata=nic,
                                           )
