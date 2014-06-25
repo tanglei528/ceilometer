@@ -23,6 +23,7 @@ import urlparse
 from ceilometer.hardware.inspector import base
 from pysnmp.entity.rfc3413.oneliner import cmdgen
 
+
 class SNMPException(Exception):
     pass
 
@@ -63,7 +64,7 @@ class SNMPInspector(base.Inspector):
 
     _cpu_user_time_oid = "1.3.6.1.4.1.2021.11.50.0"
     _cpu_user_time_percent_oid = "1.3.6.1.4.1.2021.11.9.0"
-    	
+
     #Memory OIDs
     _memory_total_oid = "1.3.6.1.4.1.2021.4.5.0"
     _memory_used_oid = "1.3.6.1.4.1.2021.4.6.0"
@@ -88,7 +89,6 @@ class SNMPInspector(base.Inspector):
     _interface_inpak_oid = "1.3.6.1.2.1.2.2.1.11"
     _interface_outpak_oid = "1.3.6.1.2.1.2.2.1.17"
 
-
     #Default port and security name
     _port = 161
     _security_name = 'public'
@@ -104,10 +104,13 @@ class SNMPInspector(base.Inspector):
         else:
             func = self._cmdGen.nextCmd
             ret_func = lambda x: x
-        ret = func(cmdgen.CommunityData('server', self._get_security_name(host), 1),
-                   cmdgen.UdpTransportTarget((host.hostname,
-                                              host.port or self._port)),
-                   oid)
+        ret = \
+            func(cmdgen.CommunityData('server',
+                                      self._get_security_name(host),
+                                      1),
+                 cmdgen.UdpTransportTarget((host.hostname,
+                                           host.port or self._port)),
+                 oid)
         (error, data) = parse_snmp_return(ret)
         if error:
             raise SNMPException("An error occurred, oid %(oid)s, "
@@ -132,16 +135,14 @@ class SNMPInspector(base.Inspector):
         #get 15 minute load
         cpu_15_min_load = \
             str(self._get_value_from_oid(self._cpu_15_min_load_oid, host))
-
         #get cpu_used 1/100s
         cpu_used = \
             str(self._get_value_from_oid(self._cpu_user_time_oid, host))
-
         #get cpu_usage
         cpu_usage = \
-        	str(self._get_value_from_oid(self._cpu_user_time_percent_oid, host))
+            str(self._get_value_from_oid(self._cpu_user_time_percent_oid,
+                                         host))
 
-        
         yield base.CPUStats(cpu_1_min=float(cpu_1_min_load),
                             cpu_5_min=float(cpu_5_min_load),
                             cpu_15_min=float(cpu_15_min_load),
@@ -154,13 +155,15 @@ class SNMPInspector(base.Inspector):
         #get used memory
         used = self._get_value_from_oid(self._memory_used_oid, host)
         #usage memory
-        usage = float(used)/float(total)
+        usage = float(used) / float(total)
         usage = float(usage)
         usage = "%.2f" % usage
         usage = float(usage)
         usage = int(usage * 100)
 
-        yield base.MemoryStats(total=int(total), used=int(used), usage=int(usage))
+        yield base.MemoryStats(total=int(total),
+                               used=int(used),
+                               usage=int(usage))
 
     def inspect_disk(self, host):
         disks = self._walk_oid(self._disk_index_oid, host)
@@ -180,7 +183,7 @@ class SNMPInspector(base.Inspector):
                                  path=str(path))
 
                 #usage disk
-                usage = float(used)/float(size)
+                usage = float(used) / float(size)
                 usage = float(usage)
                 usage = "%.2f" % usage
                 usage = float(usage)
@@ -192,18 +195,18 @@ class SNMPInspector(base.Inspector):
                 yield (disk, stats)
 
     def inspect_network(self, host):
-    	#IF-MIB::ifTyp   softwareLoopback(24)  ethernetCsmacd(6)
-    	net_types = self._walk_oid(self._interface_type_oid, host)
-    	i = 0
-    	flag = 0
-    	for type in net_types:
-    		if flag == 1:
-    			break
-    		for object_name, value in type:
-    			if value == 24:
-        			flag = 1
-    				break
-			i+=1
+        #IF-MIB::ifTyp   softwareLoopback(24)  ethernetCsmacd(6)
+        net_types = self._walk_oid(self._interface_type_oid, host)
+        i = 0
+        flag = 0
+        for type in net_types:
+            if flag == 1:
+                break
+            for object_name, value in type:
+                if value == 24:
+                    flag = 1
+                    break
+            i += 1
 
         sum_bandwidth = 0
         sum_rx_bytes = 0
@@ -213,60 +216,60 @@ class SNMPInspector(base.Inspector):
         sum_tx_packets = 0
         sum_interface = base.Interface(name="", mac="", ip="")
 
-    	net_interfaces = self._walk_oid(self._interface_index_oid, host)
+        net_interfaces = self._walk_oid(self._interface_index_oid, host)
         j = 0
         for interface in net_interfaces:
             for object_name, value in interface:
-            	if j != i:
-	                ip = self._get_ip_for_interface(host, value)
-	                name_oid = "%s.%s" % (self._interface_name_oid,
-	                                      str(value))
-	                name = self._get_value_from_oid(name_oid, host)
-	                mac_oid = "%s.%s" % (self._interface_mac_oid,
-	                                     str(value))
-	                mac = self._get_value_from_oid(mac_oid, host)
-	                bw_oid = "%s.%s" % (self._interface_bandwidth_oid,
-	                                    str(value))
-	                # bits/s to byte/s
-	                bandwidth = self._get_value_from_oid(bw_oid, host) / 8
-	                rx_oid = "%s.%s" % (self._interface_received_oid,
-	                                    str(value))
-	                rx_bytes = self._get_value_from_oid(rx_oid, host)
-	                tx_oid = "%s.%s" % (self._interface_transmitted_oid,
-	                                    str(value))
-	                tx_bytes = self._get_value_from_oid(tx_oid, host)
-	                error_oid = "%s.%s" % (self._interface_error_oid,
-	                                       str(value))
-	                error = self._get_value_from_oid(error_oid, host)
-	
-	                inpak_oid = "%s.%s" % (self._interface_inpak_oid,
-	                        str(value))
-	                rx_packets = self._get_value_from_oid(inpak_oid, host)
-	                
-	                outpak_oid = "%s.%s" % (self._interface_outpak_oid,
-	                        str(value))
-	                tx_packets = self._get_value_from_oid(outpak_oid, host)
-	
-	                adapted_mac = mac.prettyPrint().replace('0x', '')
-	                
-	                interface = base.Interface(name=str(name),
-	                                           mac=adapted_mac,
-	                                           ip=str(ip))
-	                sum_bandwidth += bandwidth
-	                sum_rx_bytes += rx_bytes
-	                sum_tx_bytes += tx_bytes
-	                sum_error += error
-	                sum_rx_packets += rx_packets
-	                sum_tx_packets += tx_packets
-	                sum_interface = interface
-                j+=1
+                if j != i:
+                    ip = self._get_ip_for_interface(host, value)
+                    name_oid = "%s.%s" % (self._interface_name_oid,
+                                          str(value))
+                    name = self._get_value_from_oid(name_oid, host)
+                    mac_oid = "%s.%s" % (self._interface_mac_oid,
+                                         str(value))
+                    mac = self._get_value_from_oid(mac_oid, host)
+                    bw_oid = "%s.%s" % (self._interface_bandwidth_oid,
+                                        str(value))
+                    # bits/s to byte/s
+                    bandwidth = self._get_value_from_oid(bw_oid, host) / 8
+                    rx_oid = "%s.%s" % (self._interface_received_oid,
+                                        str(value))
+                    rx_bytes = self._get_value_from_oid(rx_oid, host)
+                    tx_oid = "%s.%s" % (self._interface_transmitted_oid,
+                                        str(value))
+                    tx_bytes = self._get_value_from_oid(tx_oid, host)
+                    error_oid = "%s.%s" % (self._interface_error_oid,
+                                           str(value))
+                    error = self._get_value_from_oid(error_oid, host)
+
+                    inpak_oid = "%s.%s" % (self._interface_inpak_oid,
+                                           str(value))
+                    rx_packets = self._get_value_from_oid(inpak_oid, host)
+
+                    outpak_oid = "%s.%s" % (self._interface_outpak_oid,
+                                            str(value))
+                    tx_packets = self._get_value_from_oid(outpak_oid, host)
+
+                    adapted_mac = mac.prettyPrint().replace('0x', '')
+
+                    interface = base.Interface(name=str(name),
+                                               mac=adapted_mac,
+                                               ip=str(ip))
+                    sum_bandwidth += bandwidth
+                    sum_rx_bytes += rx_bytes
+                    sum_tx_bytes += tx_bytes
+                    sum_error += error
+                    sum_rx_packets += rx_packets
+                    sum_tx_packets += tx_packets
+                    sum_interface = interface
+                j += 1
         stats = base.InterfaceStats(bandwidth=int(sum_bandwidth),
                                     rx_bytes=int(sum_rx_bytes),
                                     tx_bytes=int(sum_tx_bytes),
                                     error=int(sum_error),
                                     rx_packets=int(sum_rx_packets),
                                     tx_packets=int(sum_tx_packets))
-        yield (interface, stats)
+        yield (sum_interface, stats)
 
     def _get_security_name(self, host):
         options = urlparse.parse_qs(host.query)

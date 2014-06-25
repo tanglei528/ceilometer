@@ -85,7 +85,7 @@ class OutgoingErrorsPollster(_Base):
                                           res_metadata=nic,
                                           )
 
-                                          
+
 class IncomingPacketsPollster(_Base):
 
     @staticmethod
@@ -112,6 +112,7 @@ class OutgoingPacketsPollster(_Base):
                                           volume=info.tx_packets,
                                           res_metadata=nic,
                                           )
+
 
 class IncomingBytesRatePollster(_Base):
 

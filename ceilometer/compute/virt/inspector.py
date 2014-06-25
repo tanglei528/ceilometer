@@ -134,6 +134,7 @@ DiskRateStats = collections.namedtuple('DiskRateStats',
 ##custom
 DiskUsageStats = collections.namedtuple('DiskUsageStats', ['usage'])
 
+
 # Exception types
 #
 class InspectorException(Exception):

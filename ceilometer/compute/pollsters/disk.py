@@ -262,6 +262,7 @@ class WriteRequestsRatePollster(_DiskRatesPollsterBase):
             volume=disk_rates_info.write_requests_rate,
         )
 
+
 class DiskRootUsagePollster(plugin.ComputePollster):
     def get_samples(self, manager, cache, resources):
         self._inspection_duration = self._record_poll_time()
@@ -271,13 +272,11 @@ class DiskRootUsagePollster(plugin.ComputePollster):
             try:
                 disk_info = manager.inspector.inspect_disk_usage(
                     instance, mark_name, self._inspection_duration)
-                yield util.make_sample_from_instance(
-                        instance,
-                        name=mark_name,
-                        type=sample.TYPE_GAUGE,
-                        unit='GB',
-                        volume=disk_info.usage,
-                )
+                yield util.make_sample_from_instance(instance,
+                                                     name=mark_name,
+                                                     type=sample.TYPE_GAUGE,
+                                                     unit='GB',
+                                                     volume=disk_info.usage,)
             except virt_inspector.InstanceNotFoundException as err:
                 # Instance was deleted while getting samples. Ignore it.
                 LOG.debug(_('Exception while getting samples %s'), err)
@@ -299,14 +298,12 @@ class DiskEphemeralUsagePollster(plugin.ComputePollster):
             LOG.debug(_('Checking disk usage for instance %s'), instance.id)
             try:
                 disk_info = manager.inspector.inspect_disk_usage(
-                    instance, mark_name ,self._inspection_duration,)
-                yield util.make_sample_from_instance(
-                        instance,
-                        name=mark_name,
-                        type=sample.TYPE_GAUGE,
-                        unit='GB',
-                        volume=disk_info.usage,
-                )
+                    instance, mark_name, self._inspection_duration,)
+                yield util.make_sample_from_instance(instance,
+                                                     name=mark_name,
+                                                     type=sample.TYPE_GAUGE,
+                                                     unit='GB',
+                                                     volume=disk_info.usage,)
             except virt_inspector.InstanceNotFoundException as err:
                 # Instance was deleted while getting samples. Ignore it.
                 LOG.debug(_('Exception while getting samples %s'), err)
@@ -317,4 +314,4 @@ class DiskEphemeralUsagePollster(plugin.ComputePollster):
             except Exception as err:
                 LOG.exception(_('Could not get Disk Usage for '
                                 '%(id)s: %(e)s'), {'id': instance.id,
-                                                   'e': err})                
+                                                   'e': err})

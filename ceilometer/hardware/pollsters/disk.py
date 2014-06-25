@@ -56,8 +56,8 @@ class DiskUsedPollster(_Base):
                                           volume=info.used,
                                           res_metadata=disk,
                                           )
- 
-                                          
+
+
 class DiskUsagePollster(_Base):
 
     @staticmethod

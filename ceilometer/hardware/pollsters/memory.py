@@ -64,4 +64,3 @@ class MemoryUsagePollster(_Base):
                                           unit='%',
                                           volume=c_data.usage,
                                           )
-
