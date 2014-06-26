@@ -63,7 +63,9 @@ class SNMPInspector(base.Inspector):
     _cpu_15_min_load_oid = "1.3.6.1.4.1.2021.10.1.3.3"
 
     _cpu_user_time_oid = "1.3.6.1.4.1.2021.11.50.0"
-    _cpu_user_time_percent_oid = "1.3.6.1.4.1.2021.11.9.0"
+    _cpu_nice_time_oid = "1.3.6.1.4.1.2021.11.51.0"
+    _cpu_system_time_oid = "1.3.6.1.4.1.2021.11.52.0"
+    _cpu_idle_time_percent_oid = "1.3.6.1.4.1.2021.11.11.0"
 
     #Memory OIDs
     _memory_total_oid = "1.3.6.1.4.1.2021.4.5.0"
@@ -135,12 +137,15 @@ class SNMPInspector(base.Inspector):
         #get 15 minute load
         cpu_15_min_load = \
             str(self._get_value_from_oid(self._cpu_15_min_load_oid, host))
-        #get cpu_used 1/100s
+        #get cpu_used /100s to /s
         cpu_used = \
-            str(self._get_value_from_oid(self._cpu_user_time_oid, host))
+            (int(self._get_value_from_oid(self._cpu_user_time_oid, host)) +
+            int(self._get_value_from_oid(self._cpu_nice_time_oid, host)) +
+            int(self._get_value_from_oid(self._cpu_system_time_oid, host))) / 100
+            
         #get cpu_usage
         cpu_usage = \
-            str(self._get_value_from_oid(self._cpu_user_time_percent_oid,
+            100 - (self._get_value_from_oid(self._cpu_idle_time_percent_oid,
                                          host))
 
         yield base.CPUStats(cpu_1_min=float(cpu_1_min_load),

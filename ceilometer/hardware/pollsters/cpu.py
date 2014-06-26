@@ -73,7 +73,7 @@ class CPUUsedPollster(_Base):
         return util.make_sample_from_host(host,
                                           name='cpu.used',
                                           type=sample.TYPE_GAUGE,
-                                          unit='process',
+                                          unit='s',
                                           volume=c_data.cpu_used,
                                           )
 
