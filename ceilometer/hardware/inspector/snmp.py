@@ -140,13 +140,14 @@ class SNMPInspector(base.Inspector):
         #get cpu_used /100s to /s
         cpu_used = \
             (int(self._get_value_from_oid(self._cpu_user_time_oid, host)) +
-            int(self._get_value_from_oid(self._cpu_nice_time_oid, host)) +
-            int(self._get_value_from_oid(self._cpu_system_time_oid, host))) / 100
-            
+             int(self._get_value_from_oid(self._cpu_nice_time_oid, host)) +
+             int(self._get_value_from_oid(self._cpu_system_time_oid, host))
+             ) / 100
+
         #get cpu_usage
         cpu_usage = \
             100 - (self._get_value_from_oid(self._cpu_idle_time_percent_oid,
-                                         host))
+                                            host))
 
         yield base.CPUStats(cpu_1_min=float(cpu_1_min_load),
                             cpu_5_min=float(cpu_5_min_load),
