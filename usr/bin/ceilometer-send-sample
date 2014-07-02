@@ -1,0 +1,10 @@
+#!/usr/bin/python
+# PBR Generated from 'console_scripts'
+
+import sys
+
+from ceilometer.cli import send_sample
+
+
+if __name__ == "__main__":
+    sys.exit(send_sample())

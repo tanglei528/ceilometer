@@ -1,0 +1,10 @@
+#!/usr/bin/python
+# PBR Generated from 'console_scripts'
+
+import sys
+
+from ceilometer.cli import storage_dbsync
+
+
+if __name__ == "__main__":
+    sys.exit(storage_dbsync())
