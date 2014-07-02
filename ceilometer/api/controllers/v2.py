@@ -952,8 +952,11 @@ class Meter(_Base):
     "The unique identifier for the meter"
 
     def __init__(self, **kwargs):
-        meter_id = base64.encodestring('%s+%s' % (kwargs['resource_id'],
-                                                  kwargs['name']))
+        str_id_name = '%s+%s' % (kwargs['resource_id'], kwargs['name'])
+        str_id_name = str_id_name.encode('utf-8')
+        #meter_id = base64.encodestring('%s+%s' % (kwargs['resource_id'],
+        #                                          kwargs['name']))
+        meter_id = base64.encodestring(str_id_name)
         kwargs['meter_id'] = meter_id
         super(Meter, self).__init__(**kwargs)
 
