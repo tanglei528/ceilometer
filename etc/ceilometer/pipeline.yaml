@@ -69,7 +69,7 @@ sinks:
           - name: "unit_conversion"
             parameters:
                 target:
-                    name: "memory.usage.rate"
+                    name: "memory.usage.percent"
                     unit: "%"
                     type: "gauge"
                     scale: "volume * 100.0 / resource_metadata.memory_mb"
