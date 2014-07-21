@@ -30,6 +30,16 @@ echo 'Starting packaging...'
 #cp -rf static/dashboard/css/ openstack_dashboard/static/dashboard/
 #cp -rf static/dashboard/js/ openstack_dashboard/static/dashboard/
 
+echo 'Pack alarm...'
+echo 'Prepare setup.cfg'
+cp -f setup-ceilometer-alarm.cfg setup.cfg
+echo 'Build rpm package...'
+python setup.py bdist_rpm >> ${LOG_FILE} 2>&1
+if [ $? -ne 0 ]; then
+  echo "Error: build alarm rpm package failed. ${LOG_MESSAGE}"
+  exit 1
+fi
+
 echo 'Pack api...'
 mv -f setup.cfg setup.cfg.bak
 echo 'Prepare setup.cfg'
@@ -41,16 +51,46 @@ if [ $? -ne 0 ]; then
   exit 1
 fi
 
-echo 'Pack alarm...'
+
+echo 'Pack central...'
 echo 'Prepare setup.cfg'
-cp -f setup-ceilometer-alarm.cfg setup.cfg
+cp -f setup-ceilometer-central.cfg setup.cfg
 echo 'Build rpm package...'
 python setup.py bdist_rpm >> ${LOG_FILE} 2>&1
 if [ $? -ne 0 ]; then
-  echo "Error: build alarm rpm package failed. ${LOG_MESSAGE}"
+  echo "Error: build central rpm package failed. ${LOG_MESSAGE}"
   exit 1
 fi
 
+echo 'Pack collector...'
+echo 'Prepare setup.cfg'
+cp -f setup-ceilometer-collector.cfg setup.cfg
+echo 'Build rpm package...'
+python setup.py bdist_rpm >> ${LOG_FILE} 2>&1
+if [ $? -ne 0 ]; then
+  echo "Error: build collector rpm package failed. ${LOG_MESSAGE}"
+  exit 1
+fi
+
+echo 'Pack compute...'
+echo 'Prepare setup.cfg'
+cp -f setup-ceilometer-compute.cfg setup.cfg
+echo 'Build rpm package...'
+python setup.py bdist_rpm >> ${LOG_FILE} 2>&1
+if [ $? -ne 0 ]; then
+  echo "Error: build compute rpm package failed. ${LOG_MESSAGE}"
+  exit 1
+fi
+
+echo 'Pack notification...'
+echo 'Prepare setup.cfg'
+cp -f setup-ceilometer-notification.cfg setup.cfg
+echo 'Build rpm package...'
+python setup.py bdist_rpm >> ${LOG_FILE} 2>&1
+if [ $? -ne 0 ]; then
+  echo "Error: build notification rpm package failed. ${LOG_MESSAGE}"
+  exit 1
+fi
 #echo 'Pack successfully, rpm packages are in dist/ directory'
 #mv -f setup.cfg.bak setup.cfg
 #mv -f openstack_dashboard/local/local_settings.py.backup openstack_dashboard/local/local_settings.py
@@ -58,4 +98,5 @@ fi
 #rm -rf openstack_dashboard/static/dashboard/css
 #rm -rf openstack_dashboard/static/dashboard/js
 
+mv setup.cfg.bak setup.cfg
 exit 0
